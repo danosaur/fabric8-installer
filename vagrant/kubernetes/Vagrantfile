@@ -84,7 +84,8 @@ GOFABRIC8_VERSION="0.4.76"
 
 mkdir -p /tmp/gofabric8-download
 cd /tmp/gofabric8-download
-curl --retry 999 --retry-max-time 0 -sSL https://github.com/fabric8io/gofabric8/releases/download/v${GOFABRIC8_VERSION}/gofabric8-${GOFABRIC8_VERSION}-linux-amd64.tar.gz | tar xzv
+wget -O gofabric8 https://github.com/fabric8io/gofabric8/releases/download/v${GOFABRIC8_VERSION}/gofabric8-linux-amd64
+#curl --retry 999 --retry-max-time 0 -sSL https://github.com/fabric8io/gofabric8/releases/download/v${GOFABRIC8_VERSION}/gofabric8-linux-amd64.tar.gz | tar xzv
 chmod +x gofabric8
 sudo mv gofabric8 /usr/bin
 
@@ -95,7 +96,7 @@ kubectl get pods
 
 # lets use --no-pvc to disable persistence
 # see: http://fabric8.io/guide/getStarted/persistence.html#disabling-persistence
-gofabric8 -s http://172.28.128.80:8080 deploy -y ${APP_PARAM} --no-pvc
+gofabric8 -s http://172.28.128.80:8080 deploy -y ${APP_PARAM} --pv=false
 #gofabric8 -s http://172.28.128.80:8080 secrets -y
 
 echo ""
@@ -166,8 +167,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.landrush.host_ip_address = '172.28.128.80'
   end
 
-  config.vm.box = "jimmidyson/centos-7.1"
-  config.vm.box_version = "= 1.3.1"
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.box_version = "= 20161007.0.0"
 
   config.vm.network "private_network", ip: "172.28.128.80"
 
@@ -175,7 +176,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.provider "virtualbox" do |v|
     v.memory = $vmMemory
-    v.cpus = 2
+    v.cpus = 4
     v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
   end
 
@@ -186,6 +187,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     override.vm.allowed_synced_folder_types = [:nfs, :rsync]
   end
 
+  config.vm.provision "docker"
   config.vm.provision "shell", inline: $provisionScript, keep_color: true
 
 end
