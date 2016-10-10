@@ -184,7 +184,11 @@ docker pull prom/haproxy-exporter:latest
 echo "Now lets wait for the router to start"
 
 # create the router
-oc adm router --create --credentials=/var/lib/openshift/openshift.local.config/master/openshift-router.kubeconfig --service-account=router --expose-metrics
+oadm policy add-scc-to-user privileged -z router
+oadm policy add-scc-to-user hostnetwork -z router
+oadm policy add-cluster-role-to-user system:router router
+#oc adm router --create --credentials=/var/lib/openshift/openshift.local.config/master/openshift-router.kubeconfig --service-account=router --expose-metrics
+oc adm router --create --service-account=router --expose-metrics
 
 until oc get pods -l openshift.io/deployer-pod-for.name=router-1 | grep -m 1 "Running"; do sleep 1 ; done
 
@@ -252,7 +256,11 @@ Help on using the console:
 EOT
 
 # now lets create the registry
-oc adm registry --create --credentials=/var/lib/openshift/openshift.local.config/master/openshift-registry.kubeconfig --service-account=registry
+oadm policy add-scc-to-user privileged -z registry
+oadm policy add-scc-to-user hostnetwork -z registry
+oadm policy add-cluster-role-to-user system:registry registry
+#oc adm registry --create --credentials=/var/lib/openshift/openshift.local.config/master/openshift-registry.kubeconfig --service-account=registry
+oc adm registry --create --service-account=registry
 
 SCRIPT
 
