@@ -1,3 +1,5 @@
+require_relative 'network_interfaces'
+
 # coding: utf-8
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
@@ -37,7 +39,7 @@ fi
 echo "=========================================================================="
 
 # ========================
-GOFABRIC8_VERSION="0.4.76"
+GOFABRIC8_VERSION="0.4.79"
 # ========================
 
 # download gofabric8
@@ -116,8 +118,8 @@ oc adm policy add-cluster-role-to-group cluster-reader system:serviceaccounts
 
 # lets use --pv=false to disable persistence
 # see: http://fabric8.io/guide/getStarted/persistence.html#disabling-persistence
-gofabric8 deploy -y ${APP_PARAM} --pv=false
-#gofabric8 secrets -y
+gofabric8 deploy -y ${APP_PARAM}
+gofabric8 secrets -y
 
 oc adm policy add-cluster-role-to-group cluster-reader system:serviceaccounts
 
@@ -285,7 +287,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.hostmanager.ignore_private_ip = false
     config.hostmanager.include_offline = true
 
-    config.hostmanager.aliases = %w(fabric8.vagrant.f8 jenkins.vagrant.f8 gogs.vagrant.f8 nexus.vagrant.f8 hubot-web-hook.vagrant.f8 letschat.vagrant.f8 kibana.vagrant.f8 taiga.vagrant.f8 fabric8-forge.vagrant.f8)
+    config.hostmanager.aliases = %w(fabric8.default.vagrant.f8 jenkins.default.vagrant.f8 gogs.default.vagrant.f8 nexus.default.vagrant.f8 hubot-web-hook.default.vagrant.f8 letschat.default.vagrant.f8 kibana.default.vagrant.f8 taiga.default.vagrant.f8 fabric8-forge.default.vagrant.f8)
   else
     config.landrush.enabled = true
     config.landrush.tld = $tld
@@ -322,11 +324,23 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     override.vm.allowed_synced_folder_types = [:nfs, :rsync]
   end
+  
+  #config.vm.synced_folder ".", "/vagrant", disabled: true
 
   config.vm.provision "docker"
-  config.vm.provision "shell", inline:  <<-SHELL  
-    sudo yum install zip unzip git -y
-SHELL
+  config.vm.provision "shell",
+    inline: <<-EOS
+      mkdir /etc/systemd/system/docker.service.d
+      cat <<EOF >/etc/systemd/system/docker.service.d/docker.conf
+[Service]
+ExecStart=
+ExecStart=/usr/bin/docker daemon --insecure-registry 172.0.0.0/8
+EOF
+	  systemctl daemon-reload
+	  systemctl restart docker
+      #echo 'DOCKER_OPTS="--insecure-registry 172.0.0.0/8 ${DOCKER_OPTS}"' >> /etc/default/docker
+EOS
+  config.vm.provision "shell", inline:  "sudo yum install zip unzip git nano -y"
   config.vm.provision "shell", inline: $provisionScript, keep_color: true
 
 end
